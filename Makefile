@@ -4,6 +4,10 @@ build:
 	go build -o bin/control-plane ./cmd/control-plane
 	go build -o bin/data-plane ./cmd/data-plane
 	go build -o bin/demo-app ./cmd/demo-app
+	go build -o bin/load-test ./cmd/load-test
+
+load-test:
+	go run ./cmd/load-test -duration 15s -workers 50
 
 test:
 	go test -v -race ./internal/... ./pkg/...
