@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package flagstream.v1;
+
+option go_package = "github.com/danil/feature-flag-engine/api/proto/v1;flagstreamv1";
+
+// FlagStreamService streams real-time feature flag snapshots and delta invalidations
+// from the Data Plane to connected SDK instances over a persistent HTTP/2 stream.
+service FlagStreamService {
+  rpc Subscribe(SubscribeRequest) returns (stream FlagEvent);
+}
+
+message SubscribeRequest {
+  string environment_key = 1;
+  string sdk_key = 2;
+  int64 last_known_version = 3;
+}
+
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+  EVENT_TYPE_FULL_SNAPSHOT = 1;
+  EVENT_TYPE_FLAG_UPDATED = 2;
+  EVENT_TYPE_FLAG_DELETED = 3;
+  EVENT_TYPE_HEARTBEAT = 4;
+}
+
+message Clause {
+  string attribute = 1;
+  string operator = 2;
+  repeated string values = 3;
+}
+
+message TargetingRule {
+  string id = 1;
+  string name = 2;
+  repeated Clause clauses = 3;
+  int32 rollout_basis_points = 4;
+  string salt = 5;
+}
+
+message FlagConfiguration {
+  string id = 1;
+  string flag_id = 2;
+  string flag_key = 3;
+  string environment_id = 4;
+  string environment_key = 5;
+  bool enabled = 6;
+  int32 default_rollout_basis_points = 7;
+  repeated TargetingRule targeting_rules = 8;
+  string salt = 9;
+  int64 version = 10;
+  int64 updated_at_unix_nano = 11;
+}
+
+message FlagEvent {
+  EventType type = 1;
+  string environment_key = 2;
+  int64 version = 3;
+  int64 published_at_unix_nano = 4;
+  repeated FlagConfiguration flags = 5;
+}
+

@@ -1,0 +1,140 @@
+openapi: 3.0.3
+info:
+  title: Feature Flag Engine — Control Plane API
+  version: 1.0.0
+  description: |
+    Enterprise Control Plane REST API for managing environments, feature flags,
+    deterministic percentage rollouts (MurmurHash3), and audience targeting rules.
+servers:
+  - url: http://localhost:8080
+paths:
+  /healthz:
+    get:
+      summary: Health check endpoint
+      responses:
+        '200':
+          description: Service is healthy
+  /api/v1/environments:
+    get:
+      summary: List all environments
+      responses:
+        '200':
+          description: List of environments
+    post:
+      summary: Create a new environment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key, name]
+              properties:
+                key:
+                  type: string
+                  example: production
+                name:
+                  type: string
+                  example: Production
+      responses:
+        '201':
+          description: Environment created
+  /api/v1/flags:
+    get:
+      summary: List all registered feature flags
+      responses:
+        '200':
+          description: Array of flags
+    post:
+      summary: Register a new global feature flag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key, name]
+              properties:
+                key:
+                  type: string
+                  example: new-checkout-flow
+                name:
+                  type: string
+                  example: New Checkout Flow
+                description:
+                  type: string
+      responses:
+        '201':
+          description: Flag created
+  /api/v1/environments/{envKey}/flags/{flagKey}:
+    get:
+      summary: Get flag configuration for an environment
+      parameters:
+        - in: path
+          name: envKey
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: flagKey
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Flag configuration
+    put:
+      summary: Update flag state, targeting rules, and rollout percentage
+      parameters:
+        - in: path
+          name: envKey
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: flagKey
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: If-Match
+          required: false
+          description: Expected current version for optimistic concurrency control
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled, default_rollout_basis_points]
+              properties:
+                enabled:
+                  type: boolean
+                default_rollout_basis_points:
+                  type: integer
+                  minimum: 0
+                  maximum: 10000
+                targeting_rules:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        '200':
+          description: Updated flag configuration
+        '409':
+          description: Version conflict
+  /api/v1/environments/{envKey}/snapshot:
+    get:
+      summary: Download full environment flag snapshot for SDK bootstrap
+      parameters:
+        - in: path
+          name: envKey
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Point-in-time snapshot of all flags in the environment
+
